@@ -1,0 +1,21 @@
+- id: model
+  plugin: dsv4
+  config:
+    config_path: configs/dsv4_small.json
+    tokenizer_name_or_path: tokenizer
+    dtype: bfloat16
+    attn_implementation: eager
+
+# transformers 5.2's DynamicCache does not construct V4's custom compressor
+# cache layers, so v1 generation runs without a KV cache.
+- id: inference
+  config:
+    max_new_tokens: 256
+    temperature: 0.7
+    top_p: 0.9
+    batch_size: 1
+    do_sample: false
+    use_cache: false
+    # The smoke tokenizer has no printable vocabulary; real assets should flip
+    # this back to true.
+    skip_special_tokens: false

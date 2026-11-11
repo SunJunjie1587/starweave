@@ -1,0 +1,36 @@
+- insert:
+    - id: trainer
+      plugin: trainer-sft
+      config: {max_steps: 1000, micro_batch_size: 1, log_every: 10}
+
+    - id: optimizer
+      plugin: optimizer-adamw
+      config: {lr: 1.0e-4, weight_decay: 0.01, betas: [0.9, 0.95]}
+
+    - id: scheduler
+      plugin: scheduler-cosine
+      config: {warmup_ratio: 0.03, min_lr_ratio: 0.0}
+
+    - id: loss
+      plugin: loss-ce
+      config: {ignore_index: -100}
+
+    - id: policy-grad-clip
+      plugin: policy-grad-clip
+      config: {max_norm: 1.0}
+
+    - id: policy-nan-guard
+      plugin: policy-nan-guard
+      config: {action: abort}
+
+    - id: policy-grad-accum
+      plugin: policy-grad-accum
+      config: {steps: 8}
+
+    - id: checkpoint-policy
+      plugin: checkpoint-policy-every-n
+      config: {n: 200}
+
+    - id: eval-policy
+      plugin: eval-policy-every-n
+      config: {n: 100}

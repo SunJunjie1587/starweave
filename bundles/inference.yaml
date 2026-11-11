@@ -1,0 +1,11 @@
+- insert:
+    - id: model
+      plugin: model-hf
+      config:
+        name_or_path: Qwen/Qwen3-0.6B
+        dtype: bfloat16
+        tokenizer: null
+
+    - id: inference
+      plugin: inference-hf
+      config: {max_new_tokens: 256, temperature: 0.7, top_p: 0.9, batch_size: 1}

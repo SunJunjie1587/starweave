@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "starweave-example-metrics"
+version = "0.1.0"
+description = "Example external Starweave metrics sink plugin"
+requires-python = ">=3.10"
+dependencies = ["starweave", "pydantic>=2.6"]
+
+[project.entry-points."starweave.plugins"]
+metrics-memory = "starweave_example_metrics.plugin:MemoryMetrics"
+
+[tool.starweave]
+api = ">=0.1,<1"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

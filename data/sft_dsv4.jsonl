@@ -1,0 +1,4 @@
+{"prompt": "Hello", "response": "Hi, how can I help you today?"}
+{"prompt": "What is Starweave?", "response": "Starweave is a pluginized training and inference framework."}
+{"prompt": "Name a star.", "response": "Sirius is the brightest star in the night sky."}
+{"prompt": "What is a seam?", "response": "A seam is a stable interface that plugins implement."}

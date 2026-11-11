@@ -1,0 +1,11 @@
+- insert:
+    - id: device
+      plugin: device-npu
+      config: {index: 0}
+
+- id: precision
+  plugin: precision-bf16
+
+- id: kernel
+  plugin: kernel-npu
+  config: {attention: npu_fusion, rms_norm: true}

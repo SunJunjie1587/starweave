@@ -1,0 +1,125 @@
+Recipe: recipes/sft_npu_dsv4_small.yaml
+Run: dump
+Composition hash: a82e5369cd9e0f9c0772ec2983170f3d6755be4d88d22cb1d42aa8a140c5d381
+
+Rows:
+  [launcher] launcher-local
+    source: bundle:base
+    provides: launcher
+    requires: -
+    config: {}
+  [collective] collective-none
+    source: bundle:base
+    provides: collective
+    requires: -
+    config: {"backend": "none", "world_size": 1}
+  [fsdp] fsdp-none
+    source: bundle:base
+    provides: fsdp
+    requires: collective
+    config: {"enabled": false, "strategy": "none"}
+  [ep] ep-none
+    source: bundle:base
+    provides: ep
+    requires: collective
+    config: {"dispatcher": "none", "enabled": false, "ep_size": 1}
+  [precision] precision-bf16
+    source: bundle:npu
+    provides: precision
+    requires: -
+    config: {"dtype": "bfloat16"}
+  [kernel] kernel-npu
+    source: bundle:npu
+    provides: kernel
+    requires: -
+    config: {"attention": "npu_fusion", "rms_norm": true}
+  [metrics] metrics-jsonl
+    source: bundle:base
+    provides: metrics
+    requires: -
+    config: {"path": "runs/dump/metrics.jsonl"}
+  [metrics-noop] metrics-noop
+    source: bundle:base
+    provides: metrics
+    requires: -
+    config: {"path": "runs/dump/metrics.jsonl"}
+  [profiler] profiler-off
+    source: bundle:base
+    provides: profiler
+    requires: -
+    config: {"activities": null, "enabled": true, "output": null}
+  [checkpoint] checkpoint-safetensors
+    source: bundle:base
+    provides: checkpoint
+    requires: -
+    config: {"keep_last": 2, "root": "runs/dump/checkpoints"}
+  [device] device-npu
+    source: bundle:npu
+    provides: device
+    requires: -
+    config: {"index": 0}
+  [model] dsv4
+    source: recipe.patch
+    provides: model
+    requires: device
+    config: {"attn_implementation": "eager", "checkpoint_path": null, "config_path": "configs/dsv4_small.json", "dtype": "bfloat16", "tokenizer_name_or_path": "tokenizer"}
+  [data] data-jsonl
+    source: recipe.patch
+    provides: data
+    requires: model
+    config: {"batch_size": 1, "max_seq_len": 1024, "path": "data/sft_dsv4.jsonl", "prompt_field": "prompt", "response_field": "response", "seed": 42, "shuffle": true, "split": "train", "use_chat_template": false}
+  [inference] inference-hf
+    source: bundle:dsv4
+    provides: inference
+    requires: device, model
+    config: {"batch_size": 1, "do_sample": false, "max_new_tokens": 256, "skip_special_tokens": false, "temperature": 0.7, "top_p": 0.9, "use_cache": false}
+  [trainer] trainer-sft
+    source: recipe.patch
+    provides: trainer
+    requires: device, model, data, optimizer, scheduler, loss, collective, fsdp, ep
+    config: {"log_every": 10, "max_steps": 1000, "micro_batch_size": 1}
+  [optimizer] optimizer-adamw
+    source: recipe.patch
+    provides: optimizer
+    requires: model
+    config: {"betas": [0.9, 0.95], "eps": 1e-08, "lr": 0.0001, "no_decay_keywords": ["bias", "norm", "ln_", "embedding"], "weight_decay": 0.01}
+  [scheduler] scheduler-cosine
+    source: bundle:sft
+    provides: scheduler
+    requires: optimizer
+    config: {"min_lr_ratio": 0.0, "warmup_ratio": 0.03}
+  [loss] loss-ce
+    source: bundle:sft
+    provides: loss
+    requires: -
+    config: {"ignore_index": -100}
+  [policy-grad-clip] policy-grad-clip
+    source: bundle:sft
+    provides: step_policy
+    requires: -
+    config: {"max_norm": 1.0}
+  [policy-nan-guard] policy-nan-guard
+    source: bundle:sft
+    provides: step_policy
+    requires: -
+    config: {"action": "abort", "threshold": 1e-12}
+  [policy-grad-accum] policy-grad-accum
+    source: recipe.patch
+    provides: step_policy
+    requires: -
+    config: {"steps": 8}
+  [checkpoint-policy] checkpoint-policy-every-n
+    source: recipe.patch
+    provides: checkpoint_policy
+    requires: -
+    config: {"n": 20}
+  [eval-policy] eval-policy-every-n
+    source: recipe.patch
+    provides: eval_policy
+    requires: -
+    config: {"n": 100}
+
+Phases:
+  train: {"checkpoint": "checkpoint", "metrics": "metrics", "profiler": "profiler"}
+  eval: {"metrics": "metrics", "profiler": "profiler"}
+  checkpoint: {"checkpoint": "checkpoint", "metrics": "metrics-noop"}

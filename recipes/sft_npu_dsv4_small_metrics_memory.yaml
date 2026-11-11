@@ -1,0 +1,30 @@
+name: sft-npu-dsv4-small-metrics-memory
+bundles: [base, npu, hf, dsv4, sft]
+patch:
+  - id: metrics
+    plugin: metrics-memory
+    config: {path: "runs/${run.id}/metrics-memory.jsonl"}
+
+  - id: data
+    config:
+      path: data/sft_dsv4.jsonl
+      max_seq_len: 1024
+      batch_size: 1
+      use_chat_template: false
+
+  - id: trainer
+    config: {max_steps: 3, micro_batch_size: 1, log_every: 10}
+
+  - id: policy-grad-accum
+    config: {steps: 1}
+
+  - id: checkpoint-policy
+    config: {n: 100}
+
+  - id: eval-policy
+    config: {n: 100}
+
+phases:
+  train:      {metrics: metrics, profiler: profiler, checkpoint: checkpoint}
+  eval:       {metrics: metrics, profiler: profiler}
+  checkpoint: {checkpoint: checkpoint, metrics: metrics-noop}

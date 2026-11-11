@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "starweave"
+version = "0.1.0"
+description = "Hardware-agnostic, fully pluginized training and inference framework"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "pydantic>=2.6",
+  "PyYAML>=6",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+hf = [
+  "torch>=2.1",
+  "transformers>=4.51",
+  "datasets>=2.18",
+  "safetensors>=0.4",
+]
+npu = [
+  "starweave[hf]",
+  "torch_npu>=2.1",
+]
+dev = [
+  "pytest>=8",
+  "ruff>=0.4",
+  "mypy>=1.8",
+]
+dsv4 = ["starweave-model-dsv4"]
+
+[project.scripts]
+starweave = "starweave.cli.main:main"
+
+[tool.uv.workspace]
+members = ["plugins/first_party", "plugins/model_dsv4"]
+
+[tool.uv.sources]
+starweave = { workspace = true }
+starweave-first-party = { workspace = true }
+starweave-model-dsv4 = { workspace = true }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "npu: requires an Ascend NPU and torch_npu",
+]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+check_untyped_defs = true

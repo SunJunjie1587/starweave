@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "starweave-first-party"
+version = "0.1.0"
+description = "First-party Starweave plugins (torch base, NPU backend, HF model, SFT trainer, ...)"
+requires-python = ">=3.10"
+dependencies = ["starweave", "pydantic>=2.6"]
+
+[project.entry-points."starweave.plugins"]
+launcher-local = "starweave_first_party.torch_base:LocalLauncher"
+precision-fp32 = "starweave_first_party.torch_base:FP32Precision"
+kernel-torch = "starweave_first_party.torch_base:TorchKernel"
+profiler-off = "starweave_first_party.torch_base:NoopProfiler"
+device-npu = "starweave_first_party.backend_npu:NPUDevice"
+precision-bf16 = "starweave_first_party.backend_npu:BF16Precision"
+kernel-npu = "starweave_first_party.backend_npu:NPUKernel"
+profiler-npu = "starweave_first_party.backend_npu:NPUProfiler"
+collective-none = "starweave_first_party.parallel_none:NoopCollective"
+fsdp-none = "starweave_first_party.parallel_none:NoopFSDP"
+ep-none = "starweave_first_party.parallel_none:NoopEP"
+metrics-jsonl = "starweave_first_party.metrics_jsonl:JSONLMetrics"
+metrics-noop = "starweave_first_party.metrics_jsonl:NoopMetrics"
+checkpoint-safetensors = "starweave_first_party.checkpoint_safetensors:SafetensorsCheckpoint"
+checkpoint-torch = "starweave_first_party.checkpoint_safetensors:TorchCheckpoint"
+model-hf = "starweave_first_party.model_hf:HFModel"
+inference-hf = "starweave_first_party.inference_hf:HFInference"
+data-jsonl = "starweave_first_party.data_jsonl:JSONLData"
+data-hf = "starweave_first_party.data_jsonl:HFData"
+optimizer-adamw = "starweave_first_party.optim_torch:AdamWOptimizer"
+scheduler-cosine = "starweave_first_party.optim_torch:CosineScheduler"
+scheduler-linear = "starweave_first_party.optim_torch:LinearScheduler"
+loss-ce = "starweave_first_party.optim_torch:CrossEntropyLoss"
+trainer-sft = "starweave_first_party.trainer_sft:SFTTrainer"
+policy-grad-clip = "starweave_first_party.policies:GradClipPolicy"
+policy-nan-guard = "starweave_first_party.policies:NanGuardPolicy"
+policy-grad-accum = "starweave_first_party.policies:GradAccumPolicy"
+checkpoint-policy-every-n = "starweave_first_party.policies:EveryNCheckpointPolicy"
+eval-policy-every-n = "starweave_first_party.policies:EveryNEvalPolicy"
+
+[tool.starweave]
+api = ">=0.1,<1"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

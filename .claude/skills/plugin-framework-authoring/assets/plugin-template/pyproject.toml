@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "example-adamw"
+version = "0.1.0"
+description = "Example AdamW optimizer plugin for the plugin framework"
+requires-python = ">=3.10"
+dependencies = ["pydantic>=2", "framework-api>=1,<2", "torch>=2.1"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.entry-points."framework.plugins"]
+adamw = "example_adamw.plugin:AdamWPlugin"
+
+[tool.framework]
+api = ">=1,<2"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/example_adamw"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

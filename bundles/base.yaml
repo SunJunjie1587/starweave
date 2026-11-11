@@ -1,0 +1,36 @@
+- insert:
+    - id: launcher
+      plugin: launcher-local
+
+    - id: collective
+      plugin: collective-none
+      config: {backend: none, world_size: 1}
+
+    - id: fsdp
+      plugin: fsdp-none
+      config: {enabled: false, strategy: none}
+
+    - id: ep
+      plugin: ep-none
+      config: {enabled: false, dispatcher: none, ep_size: 1}
+
+    - id: precision
+      plugin: precision-fp32
+
+    - id: kernel
+      plugin: kernel-torch
+      config: {attention: sdpa, rms_norm: true}
+
+    - id: metrics
+      plugin: metrics-jsonl
+      config: {path: "runs/${run.id}/metrics.jsonl"}
+
+    - id: metrics-noop
+      plugin: metrics-noop
+
+    - id: profiler
+      plugin: profiler-off
+
+    - id: checkpoint
+      plugin: checkpoint-safetensors
+      config: {root: "runs/${run.id}/checkpoints", keep_last: 2}

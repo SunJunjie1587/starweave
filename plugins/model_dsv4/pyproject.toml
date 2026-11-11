@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "starweave-model-dsv4"
+version = "0.1.0"
+description = "DeepSeek-V4 native model plugin for Starweave"
+requires-python = ">=3.10"
+dependencies = ["starweave", "pydantic>=2.6"]
+
+[project.optional-dependencies]
+hf = [
+  "torch>=2.1",
+  "transformers>=4.51",
+  "safetensors>=0.4",
+]
+
+[project.entry-points."starweave.plugins"]
+dsv4 = "starweave_model_dsv4.plugin:Dsv4Model"
+
+[tool.starweave]
+api = ">=0.1,<1"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/starweave_model_dsv4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
