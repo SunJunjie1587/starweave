@@ -117,6 +117,14 @@ class MetricEvent:
 
 
 @dataclass(frozen=True)
+class RolloutOutput:
+    prompt_ids: tuple[int, ...]
+    response_ids: tuple[int, ...]
+    text: str = ""
+    logprobs: Any = None
+
+
+@dataclass(frozen=True)
 class StepPlan:
     before_step: tuple[Callable[..., None], ...] = ()
     forward_backward: Callable[..., Any] | None = None
@@ -131,6 +139,24 @@ class Rebindable(Protocol):
     def flush(self) -> None: ...
     def close(self) -> None: ...
     def release(self) -> None: ...
+
+
+@dataclass
+class RLServices:
+    model: ModelHandle
+    data: DataBundle
+    rollout: Any
+    reward: Any
+    algorithm: Any
+    optimizer: OptimizerHandle
+    scheduler: SchedulerHandle
+    checkpoint: Any
+    metrics: Any
+    device: Any
+    precision: Any
+    task_config: Any
+    numerics: Any = None
+    composition_hash: str = ""
 
 
 @dataclass
@@ -158,7 +184,9 @@ __all__ = [
     "ModelHandle",
     "OptimizerHandle",
     "ParallelPlan",
+    "RLServices",
     "Rebindable",
+    "RolloutOutput",
     "RunState",
     "SchedulerHandle",
     "StepEvent",

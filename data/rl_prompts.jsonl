@@ -1,0 +1,4 @@
+{"prompt": "Hello", "reference": "Hi"}
+{"prompt": "Name a star.", "reference": "Sirius"}
+{"prompt": "What is Starweave?", "reference": "A pluginized framework"}
+{"prompt": "What is a seam?", "reference": "A stable interface"}

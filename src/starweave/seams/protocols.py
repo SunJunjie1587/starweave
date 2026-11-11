@@ -11,6 +11,7 @@ from contextlib import AbstractContextManager
 from typing import Any, Protocol, runtime_checkable
 
 from .configs import (
+    AlgorithmConfig,
     CollectiveConfig,
     DataConfig,
     DeviceConfig,
@@ -23,7 +24,10 @@ from .configs import (
     ModelConfig,
     OptimizerConfig,
     PrecisionConfig,
+    RewardConfig,
+    RolloutConfig,
     SchedulerConfig,
+    TaskConfig,
     TrainerConfig,
 )
 from .types import (
@@ -34,6 +38,7 @@ from .types import (
     OptimizerHandle,
     ParallelPlan,
     Rebindable,
+    RolloutOutput,
     RunState,
     SchedulerHandle,
     StepEvent,
@@ -190,6 +195,39 @@ class InferenceEngine(Protocol):
 
     def load(self, ctx: Any, model: ModelHandle, config: InferenceConfig) -> None: ...
     def generate(self, ctx: Any, requests: list[Any]) -> Iterator[Any]: ...
+
+
+@runtime_checkable
+class Rollout(Protocol):
+    name: str
+
+    def setup(self, ctx: Any, config: RolloutConfig) -> None: ...
+    def generate(self, ctx: Any, requests: list[Any]) -> list[RolloutOutput]: ...
+    def update_weights(self, ctx: Any, model: ModelHandle) -> None: ...
+
+
+@runtime_checkable
+class Task(Protocol):
+    name: str
+    mode: str
+
+    def setup(self, ctx: Any, services: Any) -> None: ...
+    def run(self, ctx: Any) -> Iterator[Any]: ...
+
+
+@runtime_checkable
+class Reward(Protocol):
+    name: str
+
+    def score(self, ctx: Any, samples: list[Any]) -> list[float]: ...
+
+
+@runtime_checkable
+class Algorithm(Protocol):
+    name: str
+
+    def compute_advantages(self, rewards: Any, group_size: int) -> Any: ...
+    def policy_loss(self, logprobs: Any, advantages: Any, mask: Any) -> Any: ...
 
 
 @runtime_checkable

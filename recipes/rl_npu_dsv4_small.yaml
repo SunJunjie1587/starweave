@@ -1,0 +1,35 @@
+name: rl-npu-dsv4-small
+bundles: [base, npu, hf, dsv4, rl]
+patch:
+  - id: model
+    plugin: dsv4
+    config:
+      config_path: configs/dsv4_small.json
+      tokenizer_name_or_path: tokenizer
+      dtype: bfloat16
+      attn_implementation: eager
+
+  - id: data
+    config:
+      path: data/rl_prompts.jsonl
+      max_seq_len: 512
+      batch_size: 1
+      prompt_field: prompt
+      response_field: reference
+
+  - id: task
+    config: {max_steps: 2, prompts_per_step: 1, group_size: 2, max_new_tokens: 8}
+
+  - id: rollout
+    config:
+      max_new_tokens: 8
+      temperature: 0.8
+      top_p: 0.95
+      do_sample: true
+      use_cache: false
+
+  - id: optimizer
+    config: {lr: 1.0e-4, weight_decay: 0.01, betas: [0.9, 0.95]}
+
+phases:
+  rl: {metrics: metrics, profiler: profiler, checkpoint: checkpoint}

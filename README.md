@@ -94,6 +94,26 @@ phase 切换时 metrics 从 `metrics-jsonl` 重绑到 `metrics-noop`（或反向
 旧服务按 `flush → close → release` 交接；pinned seam（model/optimizer/...）
 若试图换 provider，编译期和运行期都会拒绝。
 
+### RL（实验性）
+
+```bash
+python -m starweave.cli.main run recipes/rl_npu_dsv4_small.yaml \
+  --phase rl --run-id rl-smoke
+```
+
+当前 RL 链路是 on-policy GRPO 最小实现：
+
+- `task-rl` 负责循环；
+- `rollout-hf` 只生成 token；
+- `algorithm-grpo` 只算 group advantage 和 policy loss；
+- loss 里的 logprob 由**训练模型重新前向计算**（scheme C），不复用 rollout 引擎的
+  logprob，避免训推数值路径不一致；
+- reward 由 `reward-rule` 提供，真实任务替换成 rule/reward-model 插件即可。
+
+仓库内是合成 tokenizer，真实文本 reward 不可用，所以 smoke recipe 默认带一个
+`token_reward` 玩具奖励；真实 assets 下应把它设为 0，使用 reference match 或
+reward model。
+
 ### 外部插件
 
 ```bash

@@ -1,10 +1,12 @@
 {
+  "algorithm-grpo": "starweave_first_party.algorithm_grpo:GRPO",
   "checkpoint-policy-every-n": "starweave_first_party.policies:EveryNCheckpointPolicy",
   "checkpoint-safetensors": "starweave_first_party.checkpoint_safetensors:SafetensorsCheckpoint",
   "checkpoint-torch": "starweave_first_party.checkpoint_safetensors:TorchCheckpoint",
   "collective-none": "starweave_first_party.parallel_none:NoopCollective",
   "data-hf": "starweave_first_party.data_jsonl:HFData",
   "data-jsonl": "starweave_first_party.data_jsonl:JSONLData",
+  "data-rl-jsonl": "starweave_first_party.data_rl_jsonl:RLJSONLData",
   "device-npu": "starweave_first_party.backend_npu:NPUDevice",
   "ep-none": "starweave_first_party.parallel_none:NoopEP",
   "eval-policy-every-n": "starweave_first_party.policies:EveryNEvalPolicy",
@@ -25,7 +27,10 @@
   "precision-fp32": "starweave_first_party.torch_base:FP32Precision",
   "profiler-npu": "starweave_first_party.backend_npu:NPUProfiler",
   "profiler-off": "starweave_first_party.torch_base:NoopProfiler",
+  "reward-rule": "starweave_first_party.reward_rule:RuleReward",
+  "rollout-hf": "starweave_first_party.rollout_hf:HFRollout",
   "scheduler-cosine": "starweave_first_party.optim_torch:CosineScheduler",
   "scheduler-linear": "starweave_first_party.optim_torch:LinearScheduler",
+  "task-rl": "starweave_first_party.task_rl:RLTask",
   "trainer-sft": "starweave_first_party.trainer_sft:SFTTrainer"
 }

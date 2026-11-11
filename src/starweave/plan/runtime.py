@@ -15,7 +15,14 @@ from typing import Any
 from ..compose.loader import Composition, ResolvedRow
 from ..kernel.context import Context, RunPaths
 from ..kernel.errors import BootError, ComposeError, RunError
-from ..seams.types import CheckpointState, MetricEvent, ModelHandle, TrainingServices
+from ..seams.configs import NumericsConfig
+from ..seams.types import (
+    CheckpointState,
+    MetricEvent,
+    ModelHandle,
+    RLServices,
+    TrainingServices,
+)
 from .compiler import compile_static
 from .plan import ExecutionPlan, PhasePlan, StepPlan
 from .validator import PINNED_SEAMS, POLICY_SEAMS, REBINDABLE_SEAMS, row_seam
@@ -43,6 +50,8 @@ class Runtime:
     step_plan: StepPlan | None = None
     trainer: Any = None
     inference: Any = None
+    task: Any = None
+    rl_services: RLServices | None = None
     static_plan: ExecutionPlan | None = None
     phase: str = "train"
     row_ids: dict[str, str] = field(default_factory=dict)
@@ -163,7 +172,7 @@ def compile_runtime(
     composition: Composition,
     phase: str = "train",
 ) -> Runtime:
-    if phase not in {"train", "eval", "checkpoint", "inference"}:
+    if phase not in {"train", "eval", "checkpoint", "inference", "rl"}:
         raise BootError(f"unknown runtime phase '{phase}'")
     phase_names = list(composition.recipe.phases)
     if phase not in phase_names:
@@ -238,6 +247,9 @@ def _build_runtime(composition: Composition, phase: str, ctx: Context) -> Runtim
             )
     runtime.services["model"] = model_handle
     ctx.provide("model", model_handle)
+
+    if phase == "rl":
+        return _build_rl_runtime(runtime, active, ctx, model_handle)
 
     if phase == "inference":
         inference_row = active.get("inference")
@@ -330,6 +342,77 @@ def _build_runtime(composition: Composition, phase: str, ctx: Context) -> Runtim
     runtime.step_plan = trainer.compile(ctx, training_services)
     runtime.training_services = training_services
     runtime.trainer = trainer
+    return runtime
+
+
+def _build_rl_runtime(
+    runtime: Runtime,
+    active: dict[str, ResolvedRow],
+    ctx: Context,
+    model_handle: ModelHandle,
+) -> Runtime:
+    def require(seam: str) -> ResolvedRow:
+        row = active.get(seam)
+        if row is None:
+            raise BootError(f"rl phase has no {seam} provider")
+        return row
+
+    optimizer_row = require("optimizer")
+    optimizer_builder = _instantiate(optimizer_row, ctx)
+    runtime.plugin_instances.append(optimizer_builder)
+    optimizer = optimizer_builder.build(ctx, model_handle, optimizer_row.config)
+    runtime.services["optimizer"] = optimizer
+    ctx.provide("optimizer", optimizer)
+
+    scheduler_row = require("scheduler")
+    scheduler_builder = _instantiate(scheduler_row, ctx)
+    runtime.plugin_instances.append(scheduler_builder)
+    task_row = require("task")
+    total_steps = int(getattr(task_row.config, "max_steps", 100))
+    scheduler = scheduler_builder.build(
+        ctx, optimizer, total_steps, scheduler_row.config
+    )
+    runtime.services["scheduler"] = scheduler
+    ctx.provide("scheduler", scheduler)
+
+    data_row = require("data")
+    data_builder = _instantiate(data_row, ctx)
+    runtime.plugin_instances.append(data_builder)
+    data = data_builder.build(ctx, data_row.config)
+    runtime.services["data"] = data
+    ctx.provide("data", data)
+
+    for seam in ("rollout", "reward", "algorithm"):
+        row = require(seam)
+        instance = _instantiate(row, ctx)
+        runtime.plugin_instances.append(instance)
+        runtime.services[seam] = instance
+        ctx.provide(seam, instance)
+
+    task_config = task_row.config
+    rl_services = RLServices(
+        model=model_handle,
+        data=data,
+        rollout=runtime.services["rollout"],
+        reward=runtime.services["reward"],
+        algorithm=runtime.services["algorithm"],
+        optimizer=optimizer,
+        scheduler=scheduler,
+        checkpoint=runtime.services["checkpoint"],
+        metrics=runtime.services["metrics"],
+        device=runtime.services["device"],
+        precision=runtime.services["precision"],
+        task_config=task_config,
+        numerics=NumericsConfig(),
+        composition_hash=runtime.composition.composition_hash,
+    )
+    task = task_row.plugin_cls()
+    task.setup(ctx, rl_services)
+    runtime.plugin_instances.append(task)
+    runtime.services["task"] = task
+    ctx.provide("task", task)
+    runtime.task = task
+    runtime.rl_services = rl_services
     return runtime
 
 

@@ -59,9 +59,9 @@ def run(
         set_values=set_values,
         patch_paths=patch_paths,
     )
-    if phase not in {"train", "eval", "checkpoint"}:
-        raise BootError(f"run supports train/eval/checkpoint, got '{phase}'")
-    runtime = compile_runtime(composition, "train")
+    if phase not in {"train", "eval", "checkpoint", "rl"}:
+        raise BootError(f"run supports train/eval/checkpoint/rl, got '{phase}'")
+    runtime = compile_runtime(composition, "rl" if phase == "rl" else "train")
     run_log = RunLog(composition.run_dir / "run.jsonl")
     run_log.emit(
         "run/start",
@@ -82,8 +82,8 @@ def run(
         )
     if runtime.static_plan is None:
         raise BootError("runtime has no static plan")
-    phase_plan = runtime.static_plan.phases["train"]
-    if phase != "train":
+    phase_plan = runtime.static_plan.phases["rl" if phase == "rl" else "train"]
+    if phase not in {"train", "rl"}:
         phase_plan = runtime.switch_phase(phase)
     run_log.emit(
         "phase/enter",
@@ -92,11 +92,20 @@ def run(
         step=start_step,
     )
     trainer = runtime.services.get("trainer")
-    if trainer is None or runtime.step_plan is None:
+    if phase != "rl" and (trainer is None or runtime.step_plan is None):
         raise BootError(f"phase '{phase}' has no trainer")
-    max_steps = int(trainer.config.max_steps)
+    if phase == "rl":
+        if runtime.rl_services is None:
+            raise BootError("rl phase has no task services")
+        max_steps = int(runtime.rl_services.task_config.max_steps)
+    else:
+        max_steps = int(trainer.config.max_steps)
 
     def body() -> int:
+        if phase == "rl":
+            for _ in runtime.task.run(runtime.ctx):
+                pass
+            return 0
         if phase == "eval":
             loss, batches = evaluate(runtime, max_batches=4, step=start_step)
             run_log.emit("eval/end", loss=loss, batches=batches, step=start_step)
@@ -125,7 +134,7 @@ def run(
         "run/end",
         status="ok",
         phase=phase,
-        steps=max_steps if phase == "train" else 0,
+        steps=max_steps if phase in {"train", "rl"} else 0,
     )
     return int(result)
 

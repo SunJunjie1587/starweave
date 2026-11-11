@@ -109,11 +109,56 @@ class InferenceConfig(ConfigBase):
     skip_special_tokens: bool = True
 
 
+class RolloutConfig(ConfigBase):
+    max_new_tokens: int = 256
+    temperature: float = 1.0
+    top_p: float = 1.0
+    do_sample: bool = True
+    use_cache: bool = False
+    skip_special_tokens: bool = True
+
+
+class NumericsConfig(ConfigBase):
+    """Numerical contract shared by training and rollout paths."""
+
+    dtype: str = "bfloat16"
+    logits_dtype: str = "float32"
+    attention_backend: str | None = None
+    moe_backend: str | None = None
+    tp: int = 1
+    ep: int = 1
+    rollout_quantization: str | None = None
+    recompute_logprobs: bool = True
+    parity_max_abs: float = 1.0e-2
+
+
+class TaskConfig(ConfigBase):
+    max_steps: int = 100
+    prompts_per_step: int = 1
+    group_size: int = 2
+    max_new_tokens: int = 32
+    log_every: int = 1
+
+
+class RewardConfig(ConfigBase):
+    reference_field: str = "reference"
+    match_reward: float = 1.0
+    length_reward: float = 0.0
+    token_reward: float = 0.0
+
+
+class AlgorithmConfig(ConfigBase):
+    group_size: int = 2
+    clip_ratio: float = 0.2
+    kl_coef: float = 0.0
+
+
 class LauncherConfig(ConfigBase):
     pass
 
 
 __all__ = [
+    "AlgorithmConfig",
     "CheckpointConfig",
     "CollectiveConfig",
     "ConfigBase",
@@ -121,15 +166,19 @@ __all__ = [
     "DeviceConfig",
     "EPConfig",
     "FSDPConfig",
+    "RewardConfig",
+    "TaskConfig",
     "InferenceConfig",
     "KernelConfig",
     "LauncherConfig",
     "LossConfig",
     "MetricsConfig",
     "ModelConfig",
+    "NumericsConfig",
     "OptimizerConfig",
     "PrecisionConfig",
     "ProfilerConfig",
+    "RolloutConfig",
     "SchedulerConfig",
     "TrainerConfig",
 ]

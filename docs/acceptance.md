@@ -330,3 +330,41 @@ run/end status=ok
 
 残留：`src/starweave/plugins/` 旧实现目录仍保留为备份，当前 entry points 和
 manifest 均指向 `plugins/first_party/`，旧目录不被引用；待确认后删除。
+
+## 11. 2026-11-11 RL 精度最小链路
+
+新增 seam：`task`、`rollout`、`reward`、`algorithm`；新增插件：
+`task-rl`、`rollout-hf`、`reward-rule`、`algorithm-grpo`、`data-rl-jsonl`。
+
+实现的是 scheme C：
+
+```text
+rollout-hf.generate() → tokens
+training model forward → recomputed logprobs
+algorithm-grpo.policy_loss() → backward
+```
+
+loss 的 logprob 来自训练模型的全序列 forward，不读取 rollout 引擎的 logprob；
+`causal_lm_logprobs` 显式 `use_cache=False`，避免 dsv4 训练路径误建 KV cache。
+
+真实输出（2 step，synthetic tokenizer + toy token reward）：
+
+```text
+run/start  phase=rl
+phase/enter composition_hash=6f941241...
+step 0 loss=0.048676252365112305 reward=483.236 elapsed=1790.80 ms
+step 1 loss=0.005348682403564453 reward=653.1745 elapsed=645.42 ms
+run/end status=ok phase=rl
+```
+
+测试：
+
+```text
+本机:   74 passed, 8 skipped（torch 相关 RL/NPU 测试跳过）
+NPU 机: 83 passed, 1 skipped
+tests/rl: 6 passed（logprob 重算、数值对比、rollout、GRPO、RL task 更新）
+```
+
+已知限制：当前 GRPO 是单次 on-policy 更新、ratio=1，没有 PPO clip/old policy
+多轮更新；reward 是规则插件；tokenizer 仍是合成的，loss/reward 数值只证明链路，
+不代表模型质量。

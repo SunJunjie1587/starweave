@@ -15,6 +15,10 @@ EXCLUSIVE_SEAMS = {
     "precision",
     "trainer",
     "inference",
+    "task",
+    "rollout",
+    "reward",
+    "algorithm",
     "launcher",
     "collective",
     "fsdp",
@@ -33,7 +37,19 @@ REGISTRY_SEAMS = {
 }
 POLICY_SEAMS = {"step_policy", "checkpoint_policy", "eval_policy"}
 
-PINNED_SEAMS = {"trainer", "optimizer", "scheduler", "model", "collective", "fsdp", "ep"}
+PINNED_SEAMS = {
+    "trainer",
+    "task",
+    "rollout",
+    "reward",
+    "algorithm",
+    "optimizer",
+    "scheduler",
+    "model",
+    "collective",
+    "fsdp",
+    "ep",
+}
 REBINDABLE_SEAMS = {"metrics", "profiler", "checkpoint", "inference"}
 
 TRAIN_REQUIRED = {
@@ -48,12 +64,27 @@ TRAIN_REQUIRED = {
     "ep",
 }
 INFERENCE_REQUIRED = {"device", "model", "inference"}
+RL_REQUIRED = {
+    "device",
+    "precision",
+    "model",
+    "data",
+    "rollout",
+    "reward",
+    "algorithm",
+    "task",
+    "optimizer",
+    "scheduler",
+    "checkpoint",
+    "metrics",
+}
 
 PHASE_REQUIRED = {
     "train": TRAIN_REQUIRED,
     "eval": {"device", "model", "data", "metrics"},
     "checkpoint": {"checkpoint"},
     "inference": INFERENCE_REQUIRED,
+    "rl": RL_REQUIRED,
 }
 
 
