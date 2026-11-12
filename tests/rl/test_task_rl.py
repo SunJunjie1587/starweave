@@ -109,7 +109,9 @@ def test_rl_task_recomputes_logprobs_and_updates_model() -> None:
         metrics=metrics,
         device=SimpleNamespace(device_type="cpu"),
         precision=SimpleNamespace(autocast=lambda: nullcontext()),
-        task_config=TaskConfig(max_steps=1, prompts_per_step=1, group_size=2),
+        task_config=TaskConfig(
+            max_steps=1, prompts_per_step=1, group_size=2, update_epochs=2
+        ),
     )
     task = RLTask()
     task.setup(ctx, services)
@@ -117,5 +119,9 @@ def test_rl_task_recomputes_logprobs_and_updates_model() -> None:
     assert len(events) == 1
     assert torch.isfinite(torch.tensor(events[0].loss))
     assert not torch.allclose(before, model.logits.detach())
-    assert [event.name for event in metrics.events] == ["rl_loss", "rl_reward"]
+    assert [event.name for event in metrics.events] == [
+        "rl_loss",
+        "rl_reward",
+        "rl_clip_fraction",
+    ]
     ctx.close()

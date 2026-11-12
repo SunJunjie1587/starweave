@@ -18,7 +18,12 @@ patch:
       response_field: reference
 
   - id: task
-    config: {max_steps: 2, prompts_per_step: 1, group_size: 2, max_new_tokens: 8}
+    config:
+      max_steps: 2
+      prompts_per_step: 1
+      group_size: 2
+      max_new_tokens: 8
+      update_epochs: 2
 
   - id: rollout
     config:

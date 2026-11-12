@@ -208,3 +208,14 @@ numerics:
 3. **不要**把 vLLM 和训练 engine 塞进同一个插件就宣称“精度一致”；必须用
    §7 的验收证明。
 4. 把 `NumericsConfig` 和一致性测试作为 RL 插件发布的门槛。
+
+## 10. 当前实现状态（2026-11-12）
+
+- `rollout-hf` 只负责生成 token。
+- `task-rl` 在 rollout 后用训练模型重算 old logprobs（`no_grad`），再执行
+  `update_epochs` 轮 PPO 更新；每轮重新前向并计算 ratio clip loss。
+- `algorithm-grpo.policy_loss(logprobs, old_logprobs, advantages, mask)` 使用
+  `ratio = exp(logprobs - old_logprobs)` 和 `clip_ratio` 的 PPO clipped objective。
+- 新增 `rl_clip_fraction` metric，用于观察 ratio 超出 clip 区间的比例。
+- NPU 验证：PPO 改动后远程 NPU 主机暂时不可达，尚未重跑；上一版 on-policy
+  版本的 83 passed / 1 skipped 是本次改动前的基线。

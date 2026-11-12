@@ -106,20 +106,34 @@ class RLTask(PluginBase):
                 attention[index, : len(total)] = 1
                 response_mask[index, len(prompt_ids) : len(total)] = 1
 
-            with services.precision.autocast():
-                logprobs = causal_lm_logprobs(
+            mask = response_mask[:, 1:]
+            with torch.no_grad(), services.precision.autocast():
+                old_logprobs = causal_lm_logprobs(
                     model, input_ids, attention, logits_dtype="float32"
                 )
-                loss = services.algorithm.policy_loss(
-                    logprobs, advantages, response_mask[:, 1:]
-                )
-            loss.backward()
-            services.optimizer.step()
-            services.scheduler.step()
-            services.optimizer.zero_grad()
+            value = 0.0
+            clip_fraction = 0.0
+            clip_ratio = float(getattr(services.algorithm.config, "clip_ratio", 0.2))
+            for _ in range(max(1, self.config.update_epochs)):
+                with services.precision.autocast():
+                    logprobs = causal_lm_logprobs(
+                        model, input_ids, attention, logits_dtype="float32"
+                    )
+                    loss = services.algorithm.policy_loss(
+                        logprobs, old_logprobs, advantages, mask
+                    )
+                loss.backward()
+                services.optimizer.step()
+                services.scheduler.step()
+                services.optimizer.zero_grad()
+                value = float(loss.detach().item())
+                with torch.no_grad():
+                    ratio = torch.exp(logprobs.detach() - old_logprobs)
+                    valid = mask.bool()
+                    if valid.any():
+                        outside = (ratio < 1.0 - clip_ratio) | (ratio > 1.0 + clip_ratio)
+                        clip_fraction = float(outside[valid].float().mean().item())
             services.rollout.update_weights(ctx, model_handle)
-
-            value = float(loss.detach().item())
             reward_mean = float(
                 sum(sum(group) for group in group_rewards) / max(1, len(outputs))
             )
@@ -138,6 +152,16 @@ class RLTask(PluginBase):
                 MetricEvent(
                     name="rl_reward",
                     value=reward_mean,
+                    step=step,
+                    phase="rl",
+                    timestamp=time.time(),
+                ),
+            )
+            services.metrics.emit(
+                ctx,
+                MetricEvent(
+                    name="rl_clip_fraction",
+                    value=clip_fraction,
                     step=step,
                     phase="rl",
                     timestamp=time.time(),

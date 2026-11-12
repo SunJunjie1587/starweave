@@ -137,6 +137,7 @@ class TaskConfig(ConfigBase):
     prompts_per_step: int = 1
     group_size: int = 2
     max_new_tokens: int = 32
+    update_epochs: int = 1
     log_every: int = 1
 
 

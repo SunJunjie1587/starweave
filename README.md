@@ -108,7 +108,9 @@ python -m starweave.cli.main run recipes/rl_npu_dsv4_small.yaml \
 - `algorithm-grpo` 只算 group advantage 和 policy loss；
 - loss 里的 logprob 由**训练模型重新前向计算**（scheme C），不复用 rollout 引擎的
   logprob，避免训推数值路径不一致；
-- reward 由 `reward-rule` 提供，真实任务替换成 rule/reward-model 插件即可。
+- reward 由 `reward-rule` 提供，真实任务替换成 rule/reward-model 插件即可；
+- `update_epochs > 1` 时先保存 old logprobs，再对同一批样本做多轮 PPO 更新，
+  `algorithm-grpo` 使用 PPO ratio clip（`clip_ratio`）。
 
 仓库内是合成 tokenizer，真实文本 reward 不可用，所以 smoke recipe 默认带一个
 `token_reward` 玩具奖励；真实 assets 下应把它设为 0，使用 reference match 或

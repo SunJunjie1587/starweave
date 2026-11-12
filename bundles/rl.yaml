@@ -1,7 +1,7 @@
 - insert:
     - id: task
       plugin: task-rl
-      config: {max_steps: 10, prompts_per_step: 1, group_size: 2, max_new_tokens: 16}
+      config: {max_steps: 10, prompts_per_step: 1, group_size: 2, max_new_tokens: 16, update_epochs: 1}
 
     - id: rollout
       plugin: rollout-hf

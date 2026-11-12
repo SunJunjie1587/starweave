@@ -28,7 +28,20 @@ class GRPO(PluginBase):
         std = values.std(dim=1, keepdim=True, unbiased=False).clamp_min(1.0e-6)
         return ((values - mean) / std).reshape(-1)
 
-    def policy_loss(self, logprobs: Any, advantages: Any, mask: Any) -> Any:
+    def policy_loss(
+        self,
+        logprobs: Any,
+        old_logprobs: Any,
+        advantages: Any,
+        mask: Any,
+    ) -> Any:
+        import torch
+
         advantages = advantages.to(logprobs.dtype).reshape(-1, 1)
         mask = mask.to(logprobs.dtype)
-        return -((advantages * logprobs * mask).sum() / mask.sum().clamp_min(1.0))
+        ratio = torch.exp(logprobs - old_logprobs)
+        clip = self.config.clip_ratio
+        unclipped = ratio * advantages
+        clipped = torch.clamp(ratio, 1.0 - clip, 1.0 + clip) * advantages
+        objective = torch.min(unclipped, clipped)
+        return -((objective * mask).sum() / mask.sum().clamp_min(1.0))

@@ -227,7 +227,9 @@ class Algorithm(Protocol):
     name: str
 
     def compute_advantages(self, rewards: Any, group_size: int) -> Any: ...
-    def policy_loss(self, logprobs: Any, advantages: Any, mask: Any) -> Any: ...
+    def policy_loss(
+        self, logprobs: Any, old_logprobs: Any, advantages: Any, mask: Any
+    ) -> Any: ...
 
 
 @runtime_checkable
